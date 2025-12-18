@@ -1,3 +1,4 @@
+import { AppError } from "../../errors/app-error"
 import { prisma } from "../../lib/prisma"
 import bcrypt from "bcrypt"
 
@@ -16,7 +17,7 @@ export async function registerUser(input: RegisterInput) {
   })
 
   if (userAlreadyExists) {
-    throw new Error("email already in use")
+    throw new AppError("Email already in use", 409)
   }
 
   const passwordHash = await bcrypt.hash(input.password, 10)
@@ -57,7 +58,7 @@ export async function loginUser(input: LoginInput) {
   })
 
   if (!user) {
-    throw new Error("INVALID CREDENTIALS")
+    throw new AppError("INVALID CREDENTIALS", 401)
   }
 
   const passwordOk = await bcrypt.compare(
@@ -66,7 +67,7 @@ export async function loginUser(input: LoginInput) {
   )
 
   if (!passwordOk) {
-    throw new Error("INVALID CREDENTIALS")
+    throw new AppError("INVALID CREDENTIALS", 401)
   }
 
   return {

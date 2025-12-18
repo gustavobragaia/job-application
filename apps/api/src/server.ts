@@ -5,8 +5,11 @@ import "dotenv/config"
 import sensible from "@fastify/sensible"
 import { authRoutes } from "./modules/auth/auth.route";
 import authPlugin from "./plugins/auth"
+import { ZodError } from "zod";
+import { AppError } from "./errors/app-error";
 
 export const app = Fastify({ logger: true });
+
 await app.register(jwt, {
   secret: process.env.JWT_SECRET!,
 });
@@ -15,7 +18,27 @@ await app.register(cors, { origin: true });
 await app.register(authPlugin)
 await app.register(authRoutes)
 
-app.get("/health", async () => ({ ok: true }));
+// error 
+app.setErrorHandler((error, req, res) => {
+    //zod error only
+    if(error instanceof ZodError){
+        return res.send({
+            message: "Validation Error",
+            issues: error.issues
+        })
+    }
+    //custom error that i made
+    if(error instanceof AppError){
+        return res.status(error.statusCode).send({
+            message: error.message
+        })
+    }
+
+    req.log.error(error)
+    return res.status(500).send({
+        message: "Internal Server Error"
+    })
+})
 
 const port = Number(process.env.PORT ?? 3333);
 
