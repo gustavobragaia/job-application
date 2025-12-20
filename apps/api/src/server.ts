@@ -7,6 +7,7 @@ import { authRoutes } from "./modules/auth/auth.route";
 import authPlugin from "./plugins/auth"
 import { ZodError } from "zod";
 import { AppError } from "./errors/app-error";
+import { JobApplicationRoutes } from "./modules/job-application/job-application.route";
 
 export const app = Fastify({ logger: true });
 
@@ -17,6 +18,7 @@ await app.register(sensible)
 await app.register(cors, { origin: true });
 await app.register(authPlugin)
 await app.register(authRoutes)
+await app.register(JobApplicationRoutes)
 
 // error 
 app.setErrorHandler((error, req, res) => {
