@@ -25,22 +25,31 @@ export async function authRoutes(app: FastifyInstance) {
   })
 
   // LOGIN
-  app.post("/auth/login", async (req, res) => {
-    const bodySchema = z.object({
-      email: z.string().email(),
-      password: z.string().min(6),
-    })
+  app.post("/auth/login", 
+    {
+        config: {
+            rateLimit: {
+                max: 5,
+                timeWindow: "1 minute",
+            },
+        },
+    },
+    async (req, res) => {
+        const bodySchema = z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+        })
 
-    const body = bodySchema.parse(req.body)
+        const body = bodySchema.parse(req.body)
 
-    const user = await loginUser(body)
+        const user = await loginUser(body)
 
-    const token = await res.jwtSign(
-      { sub: user.id },
-      { expiresIn: "1h" }
-    )
+        const token = await res.jwtSign(
+        { sub: user.id },
+        { expiresIn: "1h" }
+        )
 
-    return res.code(200).send({ user, token })
+        return res.code(200).send({ user, token })
   })
 
   // PROTECTED ROUTE

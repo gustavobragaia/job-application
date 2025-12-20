@@ -8,6 +8,7 @@ import authPlugin from "./plugins/auth"
 import { ZodError } from "zod";
 import { AppError } from "./errors/app-error";
 import { JobApplicationRoutes } from "./modules/job-application/job-application.route";
+import fastifyRateLimit from "@fastify/rate-limit";
 
 export const app = Fastify({ logger: true });
 
@@ -17,6 +18,10 @@ await app.register(jwt, {
 await app.register(sensible)
 await app.register(cors, { origin: true });
 await app.register(authPlugin)
+await app.register(fastifyRateLimit, {
+    max: 5,
+    timeWindow: "1 minute"
+})
 await app.register(authRoutes)
 await app.register(JobApplicationRoutes)
 
