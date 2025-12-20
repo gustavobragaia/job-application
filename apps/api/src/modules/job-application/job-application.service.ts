@@ -249,6 +249,23 @@ export async function updateJobApplication(input: updateJobApplicationInput){
     return updated
 }
 
+//domain rulers to change status
+const ALLOWED_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
+  APPLIED: ["OA", "INTERVIEW", "REJECTED"],
+  OA: ["INTERVIEW", "REJECTED"],
+  INTERVIEW: ["OFFER", "REJECTED"],
+  OFFER: [],      // dont back
+  REJECTED: [],   // dont back
+}
+function assertValidTransition(from: ApplicationStatus, to: ApplicationStatus) {
+  const allowedNext = ALLOWED_TRANSITIONS[from]
+  const ok = allowedNext.includes(to)
+
+  if (!ok) {
+    throw new AppError(`Invalid status transition: ${from} -> ${to}`, 400)
+  }
+}
+
 type changeJobApplicationStatusInput = {
     userId: string
     id: string
@@ -264,7 +281,12 @@ export async function changeJobApplicationStatus(input: changeJobApplicationStat
         }
     })
 
+    
     if(!currentObject) throw new AppError("Application not found", 404)
+    
+    //apply ruler of domain to application status
+    assertValidTransition(currentObject.currentStatus, input.toStatus)
+
     if(currentObject.currentStatus === input.toStatus){
             return prisma.jobApplication.findUnique({
                 where: { id: currentObject.id },
