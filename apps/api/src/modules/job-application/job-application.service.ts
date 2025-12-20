@@ -1,4 +1,4 @@
-import { ApplicationStatus } from "@prisma/client"
+import { ApplicationStatus, Prisma } from "@prisma/client"
 import { prisma } from "../../lib/prisma"
 import { AppError } from "../../errors/app-error"
 
@@ -65,6 +65,8 @@ type listJobApplicationsInput = {
     q?: string
     page?: number,
     limit?: number
+    sortBy?: "createdAt" | "updatedAt" | "appliedAt"
+    order?: "asc" | "desc"
 }
 
 //from current user
@@ -93,12 +95,21 @@ export async function listJobApplications(input: listJobApplicationsInput){
             { location: { contains: input.q, mode: "insensitive" } },
         ]
     }
+    const sortBy = input.sortBy ?? "createdAt"
+    const order = input.order ?? "desc"
+    // appliedAt can be null, but prisma will accept at same way
+    const orderBy: Prisma.JobApplicationOrderByWithRelationInput =
+    sortBy === "appliedAt"
+      ? { appliedAt: order }
+      : sortBy === "updatedAt"
+      ? { updatedAt: order }
+      : { createdAt: order }
 
     //when find itens
     const [items, total] = await Promise.all([
         prisma.jobApplication.findMany({
             where,
-            orderBy: {createdAt: "desc"},
+            orderBy,
             skip,
             take: limit,
             select: {
@@ -110,7 +121,9 @@ export async function listJobApplications(input: listJobApplicationsInput){
                 location: true,
                 currentStatus: true,
                 createdAt: true,
-                updatedAt: true
+                updatedAt: true,
+                appliedAt: true,
+
             },
         }),
         
@@ -236,6 +249,60 @@ export async function updateJobApplication(input: updateJobApplicationInput){
     return updated
 }
 
+type changeJobApplicationStatusInput = {
+    userId: string
+    id: string
+    toStatus: ApplicationStatus
+    reason?: string
+}
+export async function changeJobApplicationStatus(input: changeJobApplicationStatusInput){
+    const currentObject = await prisma.jobApplication.findFirst({
+        where: {id: input.id ,userId: input.userId},
+        select: {
+            id:true,
+            currentStatus: true,
+        }
+    })
+
+    if(!currentObject) throw new AppError("Application not found", 404)
+    if(currentObject.currentStatus === input.toStatus){
+            return prisma.jobApplication.findUnique({
+                where: { id: currentObject.id },
+                select: {
+                    id: true,
+                    company: true,
+                    role: true,
+                    currentStatus: true,
+                    updatedAt: true,
+                },
+            })
+        }
+
+    return prisma.$transaction(async (tx) => {
+        const updated = await tx.jobApplication.update({
+            where: { id: currentObject.id },
+            data: { currentStatus: input.toStatus },
+            select: {
+                id: true,
+                company: true,
+                role: true,
+                currentStatus: true,
+                updatedAt: true,
+            },
+        })
+
+        await tx.statusHistory.create({
+            data: {
+                jobApplicationId: updated.id,
+                fromStatus: currentObject.currentStatus,
+                toStatus: updated.currentStatus,
+                reason: input.reason,
+            },
+        })
+        return updated
+  })
+}
+
 export async function deleteJobApplication(id: string, userId: string){
     const exists = await prisma.jobApplication.findFirst({
         where:{id, userId},
@@ -250,4 +317,26 @@ export async function deleteJobApplication(id: string, userId: string){
         where: {id}
     })
     return {ok: true}
+}
+
+export async function getApplicationsSummary(userId: string){
+    const grouped = await prisma.jobApplication.groupBy({
+        by: ["currentStatus"],
+        where: {userId},
+        _count: {_all: true}
+    })
+
+    const base: Record<ApplicationStatus, number> = {
+            APPLIED: 0,
+            OA: 0,
+            INTERVIEW: 0,
+            OFFER: 0,
+            REJECTED: 0,
+    }
+
+    for(const item of grouped){
+        base[item.currentStatus] = item._count._all
+    }
+
+    return { countByStatus: base}
 }

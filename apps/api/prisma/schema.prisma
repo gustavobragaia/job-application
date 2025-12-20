@@ -56,6 +56,11 @@ model JobApplication {
 
   @@index([userId])
   @@index([currentStatus])
+  //more indexes for better query performance
+  @@index([userId, currentStatus])
+  @@index([userId, createdAt])
+  @@index([userId, updatedAt])
+  @@index([userId, appliedAt])
 }
 
 model StatusHistory {
