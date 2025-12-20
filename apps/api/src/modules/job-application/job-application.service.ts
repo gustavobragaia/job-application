@@ -265,7 +265,6 @@ function assertValidTransition(from: ApplicationStatus, to: ApplicationStatus) {
     throw new AppError(`Invalid status transition: ${from} -> ${to}`, 400)
   }
 }
-
 type changeJobApplicationStatusInput = {
     userId: string
     id: string

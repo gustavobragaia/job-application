@@ -46,8 +46,8 @@ model JobApplication {
   appliedAt     DateTime?
 
   currency  String?
-  salaryMin Float?
-  salaryMax Float?
+  salaryMin Int?
+  salaryMax Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

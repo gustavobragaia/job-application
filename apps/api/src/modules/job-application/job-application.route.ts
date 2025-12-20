@@ -26,8 +26,8 @@ export async function JobApplicationRoutes(app: FastifyInstance){
                 location: z.string().optional(),
                 notes: z.string().optional(),
                 currentStatus: statusEnum.optional(),
-                salaryMax: z.number().nonnegative().optional(),
-                salaryMin: z.number().nonnegative().optional(),
+                salaryMax: z.number().int().nonnegative().optional(),
+                salaryMin: z.number().int().nonnegative().optional(),
                 currency: z.string().min(1).optional()
             })
 
@@ -66,6 +66,18 @@ export async function JobApplicationRoutes(app: FastifyInstance){
     
     )
 
+    //get grouped summary by application status
+    app.get(
+        "/applications/summary",
+        {onRequest: [app.authenticate]},
+        async(req, res) => {
+            const userId = req.user.sub
+            const summary = await getApplicationsSummary(userId)
+            
+            return res.code(200).send({"summary": summary})
+        }
+    )
+
     //get one application (with statusHistory)
     app.get(
         "/applications/:id",
@@ -81,8 +93,7 @@ export async function JobApplicationRoutes(app: FastifyInstance){
             return res.code(200).send({application: objectJobApplication})
         }
     )
-
-    
+   
     //delete
     app.delete(
         "/applications/:id",
@@ -98,17 +109,6 @@ export async function JobApplicationRoutes(app: FastifyInstance){
         
     )
     
-    //get grouped summary by application status
-    app.get(
-        "/applications/sumamry",
-        {onRequest: [app.authenticate]},
-        async(req, res) => {
-            const userId = req.user.sub
-            const summary = await getApplicationsSummary(userId)
-            
-            return res.code(200).send({"summary": summary})
-        }
-    )
 
     //update all info of job application
     app.put(
@@ -134,7 +134,7 @@ export async function JobApplicationRoutes(app: FastifyInstance){
                 salaryMin: z.number().int().nonnegative().nullable().optional(),
                 salaryMax: z.number().int().nonnegative().nullable().optional(),
                 currency: z.string().min(1).nullable().optional(),
-                appliedAt: z.coerce.date().nullable().optional(),
+                appliedAt: z.union([z.coerce.date(), z.string().datetime()]).nullable().optional(),
                 reason: z.string().optional(),
             })
             const body = bodySchema.parse(req.body)

@@ -1,0 +1,208 @@
+@baseUrl = http://localhost:3333
+@token = {{login.response.body.Token}}
+@applicationId = {{createApplication.response.body.application.id}}
+
+#####################################################################
+# AUTH
+#####################################################################
+
+### Register
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "gustavo.test+1@gmail.com",
+  "password": "123456",
+  "name": "Gustavo Bragaia"
+}
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "gustavo.test+1@gmail.com",
+  "password": "123456"
+}
+
+### Me (requires token)
+# @name me
+GET {{baseUrl}}/me
+Authorization: Bearer {{token}}
+
+
+#####################################################################
+# APPLICATIONS - CREATE
+#####################################################################
+
+### Create application (minimal)
+# @name createApplication
+POST {{baseUrl}}/applications
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "company": "Cohere",
+  "role": "Frontend Engineer",
+  "jobUrl": "https://example.com/job/123",
+  "location": "Remote",
+  "notes": "Applied via referral",
+  "salaryMin": 8000,
+  "salaryMax": 12000,
+  "currency": "USD",
+  "currentStatus": "APPLIED"
+}
+
+### Create application (with nullable fields as null) - OPTIONAL
+# Use this only if you decide to accept null on POST too.
+# @name createApplicationNullable
+POST {{baseUrl}}/applications
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "company": "Roblox",
+  "role": "Software Engineer Intern",
+  "jobUrl": null,
+  "location": null,
+  "notes": null,
+  "salaryMin": null,
+  "salaryMax": null,
+  "currency": null,
+  "currentStatus": "APPLIED"
+}
+
+
+#####################################################################
+# APPLICATIONS - LIST (filters/pagination/sort)
+#####################################################################
+
+### List applications (default)
+# @name listApplications
+GET {{baseUrl}}/applications
+Authorization: Bearer {{token}}
+
+### List applications (page/limit)
+# @name listApplicationsPaged
+GET {{baseUrl}}/applications?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### List applications (filter by status)
+# @name listApplicationsStatus
+GET {{baseUrl}}/applications?status=APPLIED
+Authorization: Bearer {{token}}
+
+### List applications (search q)
+# @name listApplicationsSearch
+GET {{baseUrl}}/applications?q=frontend
+Authorization: Bearer {{token}}
+
+### List applications (company/role filter)
+# @name listApplicationsCompanyRole
+GET {{baseUrl}}/applications?company=Cohere&role=Engineer
+Authorization: Bearer {{token}}
+
+### List applications (sort)
+# sortBy: createdAt | updatedAt | appliedAt
+# order: asc | desc
+# @name listApplicationsSort
+GET {{baseUrl}}/applications?sortBy=createdAt&order=desc
+Authorization: Bearer {{token}}
+
+
+#####################################################################
+# APPLICATIONS - SUMMARY
+#####################################################################
+
+### Summary grouped by status
+# @name summary
+GET {{baseUrl}}/applications/summary
+Authorization: Bearer {{token}}
+
+
+#####################################################################
+# APPLICATIONS - GET ONE
+#####################################################################
+
+### Get application by ID
+# @name getOne
+GET {{baseUrl}}/applications/{{applicationId}}
+Authorization: Bearer {{token}}
+
+
+#####################################################################
+# APPLICATIONS - UPDATE
+#####################################################################
+
+### Update application (partial)
+# @name updateApplication
+PUT {{baseUrl}}/applications/{{applicationId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "notes": "Updated notes from requests.http",
+  "location": "São Carlos - SP",
+  "appliedAt": "2025-12-20T12:00:00.000Z"
+}
+
+### Update application (remove fields using null)
+# @name updateApplicationNulls
+PUT {{baseUrl}}/applications/{{applicationId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "jobUrl": null,
+  "notes": null,
+  "salaryMin": null,
+  "salaryMax": null,
+  "currency": null
+}
+
+
+#####################################################################
+# APPLICATIONS - CHANGE STATUS (with history)
+#####################################################################
+
+### Change status
+# @name changeStatus
+PUT {{baseUrl}}/applications/{{applicationId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toStatus": "INTERVIEW",
+  "reason": "Recruiter call scheduled"
+}
+
+
+#####################################################################
+# APPLICATIONS - DELETE
+#####################################################################
+
+### Delete application
+# @name deleteApplication
+DELETE {{baseUrl}}/applications/{{applicationId}}
+Authorization: Bearer {{token}}
+
+
+#####################################################################
+# NEGATIVE TESTS (to validate errors)
+#####################################################################
+
+### Should fail: no token (expect 401)
+# @name noToken
+GET {{baseUrl}}/applications
+
+### Should fail: invalid UUID (expect 400)
+# @name invalidUUID
+GET {{baseUrl}}/applications/not-a-uuid
+Authorization: Bearer {{token}}
+
+### Should fail: invalid status (expect 400)
+# @name invalidStatus
+GET {{baseUrl}}/applications?status=NOT_A_STATUS
+Authorization: Bearer {{token}}
