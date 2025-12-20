@@ -1,10 +1,10 @@
+import { ExpoRoot } from "expo-router";
 import "./global.css";
-import { Text, View } from "react-native";
 
 export default function App() {
+  const ctx = require.context("./app");
+
   return (
-    <View className="flex-1 items-center justify-center bg-gray-100">
-      <Text className="text-2xl font-semibold text-blue-600">OK</Text>
-    </View>
+    <ExpoRoot context={ctx} />
   );
 }
