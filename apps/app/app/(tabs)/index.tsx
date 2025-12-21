@@ -5,6 +5,8 @@ import { cssInterop } from "nativewind";
 import { useMemo, useState } from "react";
 
 import { ApplicationStatus, useApplications } from "../../src/context/applications";
+import { loginUser, registerUser } from "../../src/services/auth";
+import { getToken } from "../../src/lib/api";
 
 cssInterop(SafeAreaView, { className: "style" });
 
@@ -376,6 +378,25 @@ export default function Home() {
             ) : null}
           </>
         )}
+             <Pressable
+                className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
+                onPress={async () => {
+                  const user = await loginUser({ email: "teste@teste.com", password: "123456" })
+                  console.log(user)
+                }}
+              >
+                <Text className="text-white font-bold">Login</Text>
+              </Pressable>
+                     <Pressable
+                className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
+                onPress={async () => {
+                  const user = await registerUser({ email: "teste123@teste.com", password: "1234567", name: "Gustavo"})
+                  console.log(user)
+                }}
+              >
+                <Text className="text-white font-bold">Register</Text>
+              </Pressable>
+          
       </View>
     </SafeAreaView>
   );

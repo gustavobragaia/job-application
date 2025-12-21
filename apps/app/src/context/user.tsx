@@ -1,12 +1,12 @@
-import { createContext, PropsWithChildren, useContext, useMemo, useState } from "react"
+import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react"
+import { loginUser } from "../services/auth"
+import { apiRequest, getToken, setToken } from "../lib/api"
 
-export type user = {
+export type User = {
     id: string,
     email: string,
     name: string,
-    passwordHash: string,
-    createdAt: string,
-    modifiedAt: string,
+    createdAt?: string,
 }
 
 type updateProfileInput = {
@@ -17,78 +17,83 @@ type changePasswordInput ={
     currentPassword: string,
     newPassword: string
 }
+
 type UserContextValue = {
-    user: user;
-    updateProfile: (patch: updateProfileInput) => void;
-    changePassword: (data: changePasswordInput) => void;
+    user: User | null;
+    isLoading: boolean;
+    signIn: (email: string, password: string) => Promise<void>;
+    signOut: ()=> Promise<void>;
+    updateProfile: (patch: updateProfileInput) => Promise<void>;
+    changePassword: (data: changePasswordInput) => Promise<void>
 }
 
+//context created
 const UserContext = createContext<UserContextValue | null>(null)
 
-function nowISO() {
-  return new Date().toISOString();
-}
-
-// ⚠️ placeholder. Depois troca por hash real / API.
-// Aqui só pra simular.
-function fakeHash(s: string) {
-  return `hash:${s}`;
-}
-
-function newId() {
-  // simples, suficiente pro local-first
-  return Math.random().toString(16).slice(2) + "-" + Math.random().toString(16).slice(2);
-}
-
+//creating userprovider to englobe children
 export function UserProvider({children}: PropsWithChildren){
-    const [user, setUser] = useState<user>(()=>{
-        const now = nowISO();
-        return {
-        id: newId(),
-        email: "gustavo@email.com",
-        name: "Gustavo",
-        passwordHash: fakeHash("123456"),
-        createdAt: now,
-        modifiedAt: now,
-        };
-    })
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true)
 
-    function updateProfile(patch: updateProfileInput) {
-    setUser((prev) => {
-        const name = patch.name?.trim();
-        if (!name || name === prev.name) return prev;
+    //bootstrap to get the current user
+    useEffect(()=>{
+        bootstrap()
+    }, [])
 
-        return {
-            ...prev,
-            name,
-            modifiedAt: nowISO(),
-        };
-        });
+    async function bootstrap(){
+        try{
+            const token = await getToken()
+            if(!token){
+                setUser(null)
+                return
+            }
+            const data = await apiRequest<{user: User}>("/me")
+            setUser(data.user)
+        } catch {
+            //invalid token or expired
+            await setToken(null)
+            setUser(null)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
-    function changePassword({ currentPassword, newPassword }: changePasswordInput) {
-        const cur = currentPassword.trim();
-        const next = newPassword.trim();
+    /* ---------- auth ---------- */    
+    async function signIn(email: string, password: string){
+        const loggedUser = await loginUser({email, password})
+        setUser(loggedUser)
+    }
 
-        if (fakeHash(cur) !== user.passwordHash) {
-        throw new Error("Senha atual incorreta.");
-        }
-        if (next.length < 6) {
-        throw new Error("A nova senha precisa ter pelo menos 6 caracteres.");
-        }
+    async function signOut(){
+        await setToken(null)
+        setUser(null)
+    }
 
-          setUser((prev) => ({
-            ...prev,
-            passwordHash: fakeHash(next),
-            modifiedAt: nowISO(),
-        }));
+
+    /* ---------- profile ---------- */
+    async function updateProfile(patch: updateProfileInput) {
+        const data = await apiRequest<{ user: User}>("/me",{
+            method: "PUT",
+            body: patch
+        })
+        setUser(data.user)
+    }
+
+    async function changePassword(data: changePasswordInput) {
+        await apiRequest("/me/password", {
+            method: "PUT",
+            body: data,
+        });
     }
 
     const value = useMemo(()=>({
         user,
+        isLoading,
+        signIn,
+        signOut,
         changePassword,
         updateProfile
-    }), [user])
+    }), [user, isLoading])
 
     return (
         <UserContext.Provider value={value}>
