@@ -8,6 +8,15 @@ export type ApplicationStatus =
   | "OFFER"
   | "REJECTED";
 
+//show with right label on home
+export const STATUS_LABEL: Record<ApplicationStatus, string> = {
+  APPLIED: "Aplicado",
+  OA: "Online Assessment",
+  INTERVIEW: "Entrevista",
+  OFFER: "Oferta",
+  REJECTED: "Rejeitado",
+};
+
 export type JobApplicationObject = {
     id: string;
 
@@ -34,6 +43,7 @@ export type JobApplicationObject = {
 type CreateJobApplicationInput = {
     company: string;
     role: string;
+    currentStatus: ApplicationStatus;
     jobUrl?: string | null;
     location?: string | null;
     notes?: string | null;
