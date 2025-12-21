@@ -1,7 +1,8 @@
-import { Tabs } from "expo-router";
+import { useEffect } from "react";
+import { Tabs, router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useUser } from "../../src/context/user";
 
 function PlusButton() {
   return (
@@ -25,6 +26,15 @@ function PlusButton() {
 }
 
 export default function TabsLayout() {
+  const { user, isLoading } = useUser();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      router.replace("/(auth)/login");
+    }
+  }, [user, isLoading]);
+
   return (
     <Tabs
       screenOptions={{

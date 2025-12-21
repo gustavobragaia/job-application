@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useApplications } from "../../src/context/applications";
 import { useUser } from "../../src/context/user";
 
-function formatDate(iso: string) {
+function formatDate(iso?: string) {
+  if (!iso) return "-";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString("pt-BR");
@@ -15,35 +16,40 @@ export default function Settings() {
   const { applications } = useApplications();
   const totalApps = applications.length;
 
-  const { user, updateProfile, changePassword } = useUser();
+  const { user, isLoading, signOut, changePassword, updateProfile } = useUser();
 
   const [isEditingName, setIsEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState(user.name);
+  const [nameDraft, setNameDraft] = useState("");
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  // sempre sincroniza o draft quando o user muda
   useEffect(() => {
-    setNameDraft(user.name);
-  }, [user.name]);
+    setNameDraft(user?.name ?? "");
+  }, [user?.name]);
 
-  const createdAtText = useMemo(() => formatDate(user.createdAt), [user.createdAt]);
-  const modifiedAtText = useMemo(() => formatDate(user.modifiedAt), [user.modifiedAt]);
+  const createdAtText = useMemo(() => formatDate(user?.createdAt), [user?.createdAt]);
 
-  function saveName() {
+  async function saveName() {
     const name = nameDraft.trim();
     if (!name) {
       Alert.alert("Nome inválido", "O nome não pode ficar vazio.");
       return;
     }
 
-    updateProfile({ name });
-    setIsEditingName(false);
+    try {
+      await updateProfile({ name });
+      setIsEditingName(false);
+      Alert.alert("Atualizado", "Nome atualizado com sucesso.");
+    } catch (e: any) {
+      Alert.alert("Não foi possível atualizar", e?.message ?? "Erro");
+    }
   }
 
-  function handleChangePassword() {
+  async function handleChangePassword() {
     try {
-      changePassword({ currentPassword, newPassword });
+      await changePassword({ currentPassword, newPassword });
       setCurrentPassword("");
       setNewPassword("");
       Alert.alert("Senha atualizada", "Sua senha foi alterada com sucesso.");
@@ -52,12 +58,37 @@ export default function Settings() {
     }
   }
 
+  // loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView edges={["top"]} className="flex-1 bg-zinc-950">
+        <View className="flex-1 px-5 pt-8 justify-center items-center">
+          <Text className="text-zinc-400">Carregando…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // not logged
+  if (!user) {
+    return (
+      <SafeAreaView edges={["top"]} className="flex-1 bg-zinc-950">
+        <View className="flex-1 px-5 pt-8 justify-center items-center gap-3">
+          <Text className="text-white text-xl font-bold">Você não está logado</Text>
+          <Text className="text-zinc-400 text-center">
+            Faça login para ver suas configurações.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView edges={["top"]} className="flex-1  bg-zinc-950">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-zinc-950">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
         <View className="px-5 pt-8 gap-4">
           <Text className="text-white text-3xl font-bold">Configurações</Text>
-          <Text className="text-zinc-400">Dados do usuário (local-first)</Text>
+          <Text className="text-zinc-400">Dados do usuário (logado)</Text>
 
           {/* Card: User info */}
           <View className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 gap-4">
@@ -122,10 +153,6 @@ export default function Settings() {
                 <Text className="text-zinc-400 text-xs">Criado em</Text>
                 <Text className="text-zinc-200">{createdAtText}</Text>
               </View>
-              <View className="flex-1 gap-1">
-                <Text className="text-zinc-400 text-xs">Modificado em</Text>
-                <Text className="text-zinc-200">{modifiedAtText}</Text>
-              </View>
             </View>
 
             <View className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3">
@@ -133,14 +160,21 @@ export default function Settings() {
                 Total de aplicações: <Text className="text-white">{totalApps}</Text>
               </Text>
             </View>
+
+            <Pressable
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
+              onPress={async () => {
+                await signOut();
+                Alert.alert("Saiu", "Você foi deslogado.");
+              }}
+            >
+              <Text className="text-white font-bold">Sair</Text>
+            </Pressable>
           </View>
 
           {/* Card: Change password */}
           <View className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 gap-4">
             <Text className="text-white text-xl font-bold">Alterar senha</Text>
-            <Text className="text-zinc-400">
-              Por enquanto isso é só local (depois ligamos no backend).
-            </Text>
 
             <View className="gap-2">
               <Text className="text-zinc-200 font-semibold">Senha atual</Text>

@@ -9,8 +9,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
         <UserProvider>
             <ApplicationsProvider>
-                <Stack screenOptions={{ headerShown: false }}>
+                <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
 
                 {/* Details por cima */}
                 <Stack.Screen name="applications/[id]" options={{ headerShown: false }} />

@@ -6,8 +6,7 @@ import { useMemo, useState } from "react";
 
 import { ApplicationStatus, useApplications } from "../../src/context/applications";
 import { loginUser, registerUser } from "../../src/services/auth";
-import { getToken } from "../../src/lib/api";
-
+import { useUser } from "../../src/context/user";
 cssInterop(SafeAreaView, { className: "style" });
 
 type StatusFilter = ApplicationStatus | "ALL";
@@ -55,6 +54,7 @@ function normalize(s: string) {
 
 export default function Home() {
   const { applications } = useApplications();
+  const { signOut } = useUser();
 
   // === filtros da rota ===
   const [q, setQ] = useState(""); // q
@@ -387,7 +387,7 @@ export default function Home() {
               >
                 <Text className="text-white font-bold">Login</Text>
               </Pressable>
-                     <Pressable
+                <Pressable
                 className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
                 onPress={async () => {
                   const user = await registerUser({ email: "teste123@teste.com", password: "1234567", name: "Gustavo"})
@@ -396,7 +396,15 @@ export default function Home() {
               >
                 <Text className="text-white font-bold">Register</Text>
               </Pressable>
-          
+           <Pressable
+                className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
+                onPress={async () => {
+                  const data = await signOut()
+                  console.log()
+                }}
+              >
+                <Text className="text-white font-bold">Logout</Text>
+              </Pressable>
       </View>
     </SafeAreaView>
   );
