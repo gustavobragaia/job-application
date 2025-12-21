@@ -1,10 +1,7 @@
 import { Tabs } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
-
-function TabLabel({ text }: { text: string }) {
-  return <Text style={{ fontSize: 12 }}>{text}</Text>;
-}
+import { Ionicons } from "@expo/vector-icons";
 
 function PlusButton() {
   return (
@@ -20,7 +17,9 @@ function PlusButton() {
         backgroundColor: "#10b981", // emerald-500
       }}
     >
-      <Text style={{ fontSize: 28, fontWeight: "800", color: "#09090b" }}>+</Text>
+      <Text style={{ fontSize: 28, fontWeight: "800", color: "#09090b" }}>
+        +
+      </Text>
     </Pressable>
   );
 }
@@ -30,6 +29,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarShowLabel: false, // ✅ REMOVE TEXTO
         tabBarStyle: {
           backgroundColor: "#09090b",
           borderTopColor: "#27272a",
@@ -41,15 +41,21 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: "#a1a1aa",
       }}
     >
+      {/* HOME */}
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: () => <TabLabel text="Home" />,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={26}
+              color={color}
+            />
+          ),
         }}
       />
 
-      {/* Esse “tab” do meio é só um botão */}
+      {/* BOTÃO CENTRAL (+) */}
       <Tabs.Screen
         name="create"
         options={{
@@ -62,11 +68,17 @@ export default function TabsLayout() {
         }}
       />
 
+      {/* SETTINGS */}
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Config",
-          tabBarIcon: () => <TabLabel text="Config" />,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "settings" : "settings-outline"}
+              size={26}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>
