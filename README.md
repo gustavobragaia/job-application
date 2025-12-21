@@ -41,13 +41,13 @@ The app uses a tab-based navigation structure:
 
 This structure was chosen to keep the app easy to use and easy to extend.
 
-![Navigation Flow](./docs/navigation-flow.png)
+<img src="./docs/navigation-flow.png" alt="Navigation Flow" width="640">
 
 ---
 
 ## Architecture Overview
 
-![Architecture Diagram](./docs/architecture.png)
+<img src="./docs/architecture.png" alt="Architecture Diagram" width="640">
 
 - Camadas claras: UI (RN + Expo Router) → Context/Services → (futuro) API client → Backend
 - Clear layers: UI (RN + Expo Router) → Context/Services → (future) API client → Backend
