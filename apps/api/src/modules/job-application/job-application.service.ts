@@ -6,12 +6,12 @@ type createJobApplicationInput = {
   userId: string
   company: string
   role: string
-  jobUrl?: string
-  location?: string
-  notes?: string
-  salaryMax?: number,
-  salaryMin?: number,
-  currency?: string
+  jobUrl?: string | null
+  location?: string | null
+  notes?: string | null
+  salaryMax?: number | null
+  salaryMin?: number | null
+  currency?: string | null
 }
 
 export async function createJobApplication(input: createJobApplicationInput){
@@ -25,7 +25,7 @@ export async function createJobApplication(input: createJobApplicationInput){
             notes: input.notes,
             currency: input.currency,
             salaryMin: input.salaryMin,
-            salaryMax: input.salaryMax
+            salaryMax: input.salaryMax,
         },
         select:{
             id: true,
@@ -123,6 +123,9 @@ export async function listJobApplications(input: listJobApplicationsInput){
                 createdAt: true,
                 updatedAt: true,
                 appliedAt: true,
+                jobUrl: true,
+                currency: true,
+                notes: true,
 
             },
         }),
@@ -188,6 +191,7 @@ type updateJobApplicationInput = {
   currency?: string | null
   currentStatus?: ApplicationStatus
   reason?: string
+  appliedAt?: Date| string | null
 }
 
 
@@ -217,6 +221,7 @@ export async function updateJobApplication(input: updateJobApplicationInput){
                 salaryMin: input.salaryMin ?? undefined,
                 salaryMax: input.salaryMax ?? undefined,
                 currency: input.currency ?? undefined,
+                appliedAt: input.appliedAt ?? undefined
             },
             select: {
                 id: true,
@@ -231,6 +236,7 @@ export async function updateJobApplication(input: updateJobApplicationInput){
                 currency: true,
                 createdAt: true,
                 updatedAt: true,
+                appliedAt: true,
             }
         })
 

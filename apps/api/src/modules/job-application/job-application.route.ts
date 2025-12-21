@@ -22,13 +22,12 @@ export async function JobApplicationRoutes(app: FastifyInstance){
             const bodySchema = z.object({
                 company: z.string().min(1),
                 role: z.string().min(1),
-                jobUrl: z.string().url().optional(),
-                location: z.string().optional(),
-                notes: z.string().optional(),
-                currentStatus: statusEnum.optional(),
-                salaryMax: z.number().int().nonnegative().optional(),
-                salaryMin: z.number().int().nonnegative().optional(),
-                currency: z.string().min(1).optional()
+                jobUrl: z.string().url().nullable().optional(),
+                location: z.string().nullable().optional(),
+                notes: z.string().nullable().optional(),
+                salaryMax: z.number().int().nonnegative().nullable().optional(),
+                salaryMin: z.number().int().nonnegative().nullable().optional(),
+                currency: z.string().min(1).nullable().optional()
             })
 
             const body = bodySchema.parse(req.body)
