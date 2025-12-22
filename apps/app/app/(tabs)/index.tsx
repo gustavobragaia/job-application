@@ -26,15 +26,15 @@ const LIMIT_OPTIONS = [10, 20, 50] as const;
 function statusLabel(s: ApplicationStatus) {
   switch (s) {
     case "APPLIED":
-      return "Aplicado";
+      return "Applied";
     case "OA":
       return "OA";
     case "INTERVIEW":
-      return "Entrevista";
+      return "Interview";
     case "OFFER":
-      return "Oferta";
+      return "Offer";
     case "REJECTED":
-      return "Rejeitado";
+      return "Rejected";
   }
 }
 
@@ -173,7 +173,7 @@ export default function Home() {
         {/* Search (q) */}
         <TextInput
           className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-          placeholder="Buscar (q) por empresa ou cargo..."
+          placeholder="Search by company or role..."
           placeholderTextColor="#71717a"
           value={q}
           onChangeText={(t) => {
@@ -194,7 +194,7 @@ export default function Home() {
             }}
           >
             <Text className={["font-bold", chipText(status === "ALL")].join(" ")}>
-              Todos • {applications.length}
+              All • {applications.length}
             </Text>
           </Pressable>
 
@@ -236,10 +236,10 @@ export default function Home() {
           <View className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 gap-4">
             <View className="flex-row gap-3">
               <View className="flex-1 gap-2">
-                <Text className="text-zinc-200 font-semibold">Company (filtro)</Text>
+                <Text className="text-zinc-200 font-semibold">Company (filter)</Text>
                 <TextInput
                   className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-white"
-                  placeholder="Ex: Nubank"
+                  placeholder="e.g. Nubank"
                   placeholderTextColor="#71717a"
                   value={company}
                   onChangeText={(t) => {
@@ -251,10 +251,10 @@ export default function Home() {
               </View>
 
               <View className="flex-1 gap-2">
-                <Text className="text-zinc-200 font-semibold">Role (filtro)</Text>
+                <Text className="text-zinc-200 font-semibold">Role (filter)</Text>
                 <TextInput
                   className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-white"
-                  placeholder="Ex: Frontend"
+                  placeholder="e.g. Frontend"
                   placeholderTextColor="#71717a"
                   value={role}
                   onChangeText={(t) => {
@@ -330,14 +330,14 @@ export default function Home() {
               className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
               onPress={clearAllFilters}
             >
-              <Text className="text-white font-bold">Limpar filtros</Text>
+              <Text className="text-white font-bold">Clear filters</Text>
             </Pressable>
           </View>
         ) : null}
 
         {/* Results header */}
         <Text className="text-zinc-400">
-          Mostrando {paged.length} de {total}
+          Showing {paged.length} of {total}
         </Text>
 
         {/* ✅ Loading inicial (sem mexer em estilo) */}
@@ -348,9 +348,9 @@ export default function Home() {
           </View>
         ) : total === 0 ? (
           <View className="flex-1 items-center justify-center gap-2">
-            <Text className="text-zinc-400 text-lg font-semibold">Nada encontrado</Text>
+            <Text className="text-zinc-400 text-lg font-semibold">Nothing found</Text>
             <Text className="text-zinc-500 text-sm text-center">
-              Ajuste filtros ou crie uma nova aplicação.
+              Adjust filters or create a new application.
             </Text>
           </View>
         ) : (
@@ -390,9 +390,9 @@ export default function Home() {
                 className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
                 onPress={() => setPage((p) => p + 1)}
               >
-                <Text className="text-white font-bold">Carregar mais</Text>
-              </Pressable>
-            ) : null}
+                <Text className="text-white font-bold">Load more</Text>
+            </Pressable>
+          ) : null}
           </>
         )}
       </View>

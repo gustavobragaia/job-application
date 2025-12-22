@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, TextInput, View, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useMemo, useState } from "react";
 
@@ -9,7 +9,7 @@ function formatDate(iso?: string) {
   if (!iso) return "-";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("pt-BR");
+  return d.toLocaleString("en-US");
 }
 
 export default function Settings() {
@@ -23,8 +23,12 @@ export default function Settings() {
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
-  // sempre sincroniza o draft quando o user muda
+  // always sync draft when user changes
   useEffect(() => {
     setNameDraft(user?.name ?? "");
   }, [user?.name]);
@@ -34,28 +38,32 @@ export default function Settings() {
   async function saveName() {
     const name = nameDraft.trim();
     if (!name) {
-      Alert.alert("Nome inválido", "O nome não pode ficar vazio.");
+      Alert.alert("Invalid name", "Name cannot be empty.");
       return;
     }
 
     try {
+      setIsSavingName(true);
       await updateProfile({ name });
       setIsEditingName(false);
-      Alert.alert("Atualizado", "Nome atualizado com sucesso.");
+      setBanner({ type: "success", message: "Name updated successfully." });
     } catch (e: any) {
-      Alert.alert("Não foi possível atualizar", e?.message ?? "Erro");
+      setBanner({ type: "error", message: e?.message ?? "Could not update name." });
     }
+    setIsSavingName(false);
   }
 
   async function handleChangePassword() {
     try {
+      setIsChangingPassword(true);
       await changePassword({ currentPassword, newPassword });
       setCurrentPassword("");
       setNewPassword("");
-      Alert.alert("Senha atualizada", "Sua senha foi alterada com sucesso.");
+      setBanner({ type: "success", message: "Password updated." });
     } catch (e: any) {
-      Alert.alert("Não foi possível alterar a senha", e?.message ?? "Erro");
+      setBanner({ type: "error", message: e?.message ?? "Could not change password." });
     }
+    setIsChangingPassword(false);
   }
 
   // loading state
@@ -63,7 +71,7 @@ export default function Settings() {
     return (
       <SafeAreaView edges={["top"]} className="flex-1 bg-zinc-950">
         <View className="flex-1 px-5 pt-8 justify-center items-center">
-          <Text className="text-zinc-400">Carregando…</Text>
+          <Text className="text-zinc-400">Loading…</Text>
         </View>
       </SafeAreaView>
     );
@@ -74,9 +82,9 @@ export default function Settings() {
     return (
       <SafeAreaView edges={["top"]} className="flex-1 bg-zinc-950">
         <View className="flex-1 px-5 pt-8 justify-center items-center gap-3">
-          <Text className="text-white text-xl font-bold">Você não está logado</Text>
+          <Text className="text-white text-xl font-bold">You are not logged in</Text>
           <Text className="text-zinc-400 text-center">
-            Faça login para ver suas configurações.
+            Sign in to view your settings.
           </Text>
         </View>
       </SafeAreaView>
@@ -87,8 +95,28 @@ export default function Settings() {
     <SafeAreaView edges={["top"]} className="flex-1 bg-zinc-950">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
         <View className="px-5 pt-8 gap-4">
-          <Text className="text-white text-3xl font-bold">Configurações</Text>
-          <Text className="text-zinc-400">Dados do usuário (logado)</Text>
+          <Text className="text-white text-3xl font-bold">Settings</Text>
+          <Text className="text-zinc-400">User data (logged in)</Text>
+
+          {banner ? (
+            <View
+              className={[
+                "px-4 py-3 rounded-2xl border",
+                banner.type === "success"
+                  ? "bg-emerald-500/15 border-emerald-500/40"
+                  : "bg-red-500/15 border-red-500/40",
+              ].join(" ")}
+            >
+              <Text
+                className={[
+                  "font-semibold",
+                  banner.type === "success" ? "text-emerald-200" : "text-red-200",
+                ].join(" ")}
+              >
+                {banner.message}
+              </Text>
+            </View>
+          ) : null}
 
           {/* Card: User info */}
           <View className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 gap-4">
@@ -103,13 +131,13 @@ export default function Settings() {
             </View>
 
             <View className="gap-2">
-              <Text className="text-zinc-400 text-xs">Nome</Text>
+              <Text className="text-zinc-400 text-xs">Name</Text>
 
               {isEditingName ? (
                 <>
                   <TextInput
                     className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                    placeholder="Seu nome"
+                    placeholder="Your name"
                     placeholderTextColor="#71717a"
                     value={nameDraft}
                     onChangeText={setNameDraft}
@@ -119,8 +147,13 @@ export default function Settings() {
                     <Pressable
                       className="flex-1 bg-emerald-500 rounded-2xl py-4 items-center active:opacity-90"
                       onPress={saveName}
+                      disabled={isSavingName}
                     >
-                      <Text className="text-zinc-950 font-bold">Salvar</Text>
+                      {isSavingName ? (
+                        <ActivityIndicator color="#0b0b0f" />
+                      ) : (
+                        <Text className="text-zinc-950 font-bold">Save</Text>
+                      )}
                     </Pressable>
 
                     <Pressable
@@ -129,8 +162,9 @@ export default function Settings() {
                         setNameDraft(user.name);
                         setIsEditingName(false);
                       }}
+                      disabled={isSavingName}
                     >
-                      <Text className="text-white font-bold">Cancelar</Text>
+                      <Text className="text-white font-bold">Cancel</Text>
                     </Pressable>
                   </View>
                 </>
@@ -142,7 +176,7 @@ export default function Settings() {
                     className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2 active:opacity-90"
                     onPress={() => setIsEditingName(true)}
                   >
-                    <Text className="text-white font-bold">Editar</Text>
+                    <Text className="text-white font-bold">Edit</Text>
                   </Pressable>
                 </View>
               )}
@@ -150,37 +184,49 @@ export default function Settings() {
 
             <View className="flex-row gap-3">
               <View className="flex-1 gap-1">
-                <Text className="text-zinc-400 text-xs">Criado em</Text>
+                <Text className="text-zinc-400 text-xs">Created at</Text>
                 <Text className="text-zinc-200">{createdAtText}</Text>
               </View>
             </View>
 
             <View className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3">
               <Text className="text-zinc-200 font-semibold">
-                Total de aplicações: <Text className="text-white">{totalApps}</Text>
+                Total applications: <Text className="text-white">{totalApps}</Text>
               </Text>
             </View>
 
             <Pressable
               className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
               onPress={async () => {
-                await signOut();
-                Alert.alert("Saiu", "Você foi deslogado.");
+                setIsSigningOut(true);
+                try {
+                  await signOut();
+                  setBanner({ type: "success", message: "Signed out." });
+                } catch (e: any) {
+                  setBanner({ type: "error", message: e?.message ?? "Could not sign out." });
+                } finally {
+                  setIsSigningOut(false);
+                }
               }}
+              disabled={isSigningOut}
             >
-              <Text className="text-white font-bold">Sair</Text>
+              {isSigningOut ? (
+                <ActivityIndicator />
+              ) : (
+                <Text className="text-white font-bold">Sign out</Text>
+              )}
             </Pressable>
           </View>
 
           {/* Card: Change password */}
           <View className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 gap-4">
-            <Text className="text-white text-xl font-bold">Alterar senha</Text>
+            <Text className="text-white text-xl font-bold">Change password</Text>
 
             <View className="gap-2">
-              <Text className="text-zinc-200 font-semibold">Senha atual</Text>
+              <Text className="text-zinc-200 font-semibold">Current password</Text>
               <TextInput
                 className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                placeholder="Digite a senha atual"
+                placeholder="Enter current password"
                 placeholderTextColor="#71717a"
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
@@ -189,10 +235,10 @@ export default function Settings() {
             </View>
 
             <View className="gap-2">
-              <Text className="text-zinc-200 font-semibold">Nova senha</Text>
+              <Text className="text-zinc-200 font-semibold">New password</Text>
               <TextInput
                 className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Minimum 6 characters"
                 placeholderTextColor="#71717a"
                 value={newPassword}
                 onChangeText={setNewPassword}
@@ -208,9 +254,13 @@ export default function Settings() {
                   : "bg-zinc-800",
               ].join(" ")}
               onPress={handleChangePassword}
-              disabled={!currentPassword.trim() || newPassword.trim().length < 6}
+              disabled={!currentPassword.trim() || newPassword.trim().length < 6 || isChangingPassword}
             >
-              <Text className="text-zinc-950 font-bold text-lg">Atualizar senha</Text>
+              {isChangingPassword ? (
+                <ActivityIndicator color="#0b0b0f" />
+              ) : (
+                <Text className="text-zinc-950 font-bold text-lg">Update password</Text>
+              )}
             </Pressable>
           </View>
         </View>

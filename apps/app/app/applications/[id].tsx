@@ -6,19 +6,26 @@ import { useEffect, useMemo, useState } from "react";
 import { ApplicationStatus, useApplications } from "../../src/context/applications";
 
 const STATUSES: ApplicationStatus[] = ["APPLIED", "OA", "INTERVIEW", "OFFER", "REJECTED"];
+const ALLOWED_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
+  APPLIED: ["OA", "INTERVIEW", "REJECTED"],
+  OA: ["INTERVIEW", "REJECTED"],
+  INTERVIEW: ["OFFER", "REJECTED"],
+  OFFER: ["INTERVIEW"],
+  REJECTED: [],
+};
 
 function statusLabel(s: ApplicationStatus) {
   switch (s) {
     case "APPLIED":
-      return "Aplicado";
+      return "Applied";
     case "OA":
       return "Online Assessment";
     case "INTERVIEW":
-      return "Entrevista";
+      return "Interview";
     case "OFFER":
-      return "Oferta";
+      return "Offer";
     case "REJECTED":
-      return "Rejeitado";
+      return "Rejected";
   }
 }
 
@@ -96,14 +103,14 @@ export default function ApplicationDetails() {
     return (
       <SafeAreaView className="flex-1 bg-zinc-950">
         <View className="flex-1 px-5 pt-8 gap-4">
-          <Text className="text-white text-2xl font-bold">Erro</Text>
-          <Text className="text-zinc-400">ID inválido.</Text>
+          <Text className="text-white text-2xl font-bold">Error</Text>
+          <Text className="text-zinc-400">Invalid ID.</Text>
 
           <Pressable
             className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
             onPress={() => router.replace("/")}
           >
-            <Text className="text-white font-bold text-lg">Voltar</Text>
+            <Text className="text-white font-bold text-lg">Back</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -145,16 +152,16 @@ export default function ApplicationDetails() {
     return (
       <SafeAreaView className="flex-1 bg-zinc-950">
         <View className="flex-1 px-5 pt-8 gap-4">
-          <Text className="text-white text-2xl font-bold">Não encontrado</Text>
+          <Text className="text-white text-2xl font-bold">Not found</Text>
           <Text className="text-zinc-400">
-            Essa aplicação não existe (talvez você tenha apagado).
+            This application does not exist (maybe you deleted it).
           </Text>
 
           <Pressable
             className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
             onPress={() => router.replace("/")}
           >
-            <Text className="text-white font-bold text-lg">Voltar</Text>
+            <Text className="text-white font-bold text-lg">Back</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -162,10 +169,10 @@ export default function ApplicationDetails() {
   }
 
   function handleDelete() {
-    Alert.alert("Excluir aplicação", `Excluir "${app.company}"?`, [
-      { text: "Cancelar", style: "cancel" },
+    Alert.alert("Delete application", `Delete "${app.company}"?`, [
+      { text: "Cancel", style: "cancel" },
       {
-        text: "Excluir",
+        text: "Delete",
         style: "destructive",
         onPress: () => {
           deleteApplication(app.id);
@@ -180,7 +187,7 @@ export default function ApplicationDetails() {
   }
 
   function cancelEdit() {
-    // restaura dos dados atuais
+    // restore drafts from current data
     setCompanyDraft(app.company ?? "");
     setRoleDraft(app.role ?? "");
     setJobUrlDraft(app.jobUrl ?? "");
@@ -198,7 +205,7 @@ export default function ApplicationDetails() {
     const role = roleDraft.trim();
 
     if (!company || !role) {
-      Alert.alert("Campos obrigatórios", "Empresa e cargo não podem ficar vazios.");
+      Alert.alert("Required fields", "Company and role cannot be empty.");
       return;
     }
 
@@ -209,7 +216,7 @@ export default function ApplicationDetails() {
 
     const appliedAtISO = parseNullableDateToISO(appliedAtDraft);
     if (appliedAtDraft.trim() && !appliedAtISO) {
-      Alert.alert("Data inválida", 'Use "YYYY-MM-DD" (ex: 2025-12-21) ou deixe vazio.');
+      Alert.alert("Invalid date", 'Use "YYYY-MM-DD" (e.g. 2025-12-21) or leave blank.');
       return;
     }
 
@@ -217,15 +224,15 @@ export default function ApplicationDetails() {
     const max = parseNullableInt(salaryMaxDraft);
 
     if (salaryMinDraft.trim() && min === null) {
-      Alert.alert("Salário mínimo inválido", "Digite um número inteiro ou deixe vazio.");
+      Alert.alert("Invalid min salary", "Enter an integer or leave blank.");
       return;
     }
     if (salaryMaxDraft.trim() && max === null) {
-      Alert.alert("Salário máximo inválido", "Digite um número inteiro ou deixe vazio.");
+      Alert.alert("Invalid max salary", "Enter an integer or leave blank.");
       return;
     }
     if (min !== null && max !== null && min > max) {
-      Alert.alert("Faixa inválida", "O salário mínimo não pode ser maior que o máximo.");
+      Alert.alert("Invalid range", "Minimum salary cannot be greater than maximum.");
       return;
     }
 
@@ -251,12 +258,12 @@ export default function ApplicationDetails() {
     try {
       const ok = await Linking.canOpenURL(url);
       if (!ok) {
-        Alert.alert("Não foi possível abrir o link", url);
+        Alert.alert("Could not open link", url);
         return;
       }
       await Linking.openURL(url);
     } catch {
-      Alert.alert("Não foi possível abrir o link", url);
+      Alert.alert("Could not open link", url);
     }
   }
 
@@ -270,41 +277,41 @@ export default function ApplicationDetails() {
               className="border border-zinc-800 rounded-2xl px-4 py-2 active:opacity-90"
               onPress={() => router.back()}
             >
-              <Text className="text-white font-semibold">Voltar</Text>
+              <Text className="text-white font-semibold">Back</Text>
             </Pressable>
 
             <View className="flex-row gap-2">
               {isEditing ? (
                 <>
-                  <Pressable
-                    className="bg-emerald-500 rounded-2xl px-4 py-2 active:opacity-90"
-                    onPress={saveEdit}
-                  >
-                    <Text className="text-zinc-950 font-bold">Salvar</Text>
-                  </Pressable>
+                      <Pressable
+                        className="bg-emerald-500 rounded-2xl px-4 py-2 active:opacity-90"
+                        onPress={saveEdit}
+                      >
+                        <Text className="text-zinc-950 font-bold">Save</Text>
+                      </Pressable>
 
                   <Pressable
-                    className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2 active:opacity-90"
-                    onPress={cancelEdit}
-                  >
-                    <Text className="text-white font-bold">Cancelar</Text>
-                  </Pressable>
+                        className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2 active:opacity-90"
+                        onPress={cancelEdit}
+                      >
+                        <Text className="text-white font-bold">Cancel</Text>
+                      </Pressable>
                 </>
               ) : (
                 <>
                   <Pressable
-                    className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2 active:opacity-90"
-                    onPress={startEdit}
-                  >
-                    <Text className="text-white font-bold">Editar</Text>
-                  </Pressable>
+                        className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2 active:opacity-90"
+                        onPress={startEdit}
+                      >
+                        <Text className="text-white font-bold">Edit</Text>
+                      </Pressable>
 
                   <Pressable
-                    className="bg-red-600 rounded-2xl px-4 py-2 active:opacity-90"
-                    onPress={handleDelete}
-                  >
-                    <Text className="text-white font-bold">Excluir</Text>
-                  </Pressable>
+                        className="bg-red-600 rounded-2xl px-4 py-2 active:opacity-90"
+                        onPress={handleDelete}
+                      >
+                        <Text className="text-white font-bold">Delete</Text>
+                      </Pressable>
                 </>
               )}
             </View>
@@ -314,11 +321,11 @@ export default function ApplicationDetails() {
           <View className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 gap-4">
             {/* Company */}
             <View className="gap-2">
-              <Text className="text-zinc-200 font-semibold">Empresa</Text>
+            <Text className="text-zinc-200 font-semibold">Company</Text>
               {isEditing ? (
                 <TextInput
                   className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                  placeholder="Ex: Nubank"
+                  placeholder="e.g. Nubank"
                   placeholderTextColor="#71717a"
                   value={companyDraft}
                   onChangeText={setCompanyDraft}
@@ -330,11 +337,11 @@ export default function ApplicationDetails() {
 
             {/* Role */}
             <View className="gap-2">
-              <Text className="text-zinc-200 font-semibold">Cargo</Text>
+            <Text className="text-zinc-200 font-semibold">Role</Text>
               {isEditing ? (
                 <TextInput
                   className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                  placeholder="Ex: Frontend Dev"
+                  placeholder="e.g. Frontend Dev"
                   placeholderTextColor="#71717a"
                   value={roleDraft}
                   onChangeText={setRoleDraft}
@@ -353,7 +360,7 @@ export default function ApplicationDetails() {
 
             {/* Applied date */}
             <View className="gap-2">
-              <Text className="text-zinc-200 font-semibold">Data da aplicação</Text>
+              <Text className="text-zinc-200 font-semibold">Applied at</Text>
               {isEditing ? (
                 <TextInput
                   className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
@@ -373,11 +380,11 @@ export default function ApplicationDetails() {
 
             {/* Location */}
             <View className="gap-2">
-              <Text className="text-zinc-200 font-semibold">Localização</Text>
+              <Text className="text-zinc-200 font-semibold">Location</Text>
               {isEditing ? (
                 <TextInput
                   className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                  placeholder="Ex: Remoto / São Paulo"
+                  placeholder="e.g. Remote / São Paulo"
                   placeholderTextColor="#71717a"
                   value={locationDraft}
                   onChangeText={setLocationDraft}
@@ -414,11 +421,11 @@ export default function ApplicationDetails() {
 
             {/* Notes */}
             <View className="gap-2">
-              <Text className="text-zinc-200 font-semibold">Notas</Text>
+              <Text className="text-zinc-200 font-semibold">Notes</Text>
               {isEditing ? (
                 <TextInput
                   className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                  placeholder="O que você quer lembrar?"
+                  placeholder="What do you want to remember?"
                   placeholderTextColor="#71717a"
                   value={notesDraft}
                   onChangeText={setNotesDraft}
@@ -433,12 +440,12 @@ export default function ApplicationDetails() {
 
             {/* Salary */}
             <View className="gap-2">
-              <Text className="text-zinc-200 font-semibold">Salário</Text>
+              <Text className="text-zinc-200 font-semibold">Salary</Text>
 
               {isEditing ? (
                 <View className="flex-row gap-3">
                   <View className="flex-1 gap-2">
-                    <Text className="text-zinc-400 text-xs">Moeda</Text>
+                    <Text className="text-zinc-400 text-xs">Currency</Text>
                     <TextInput
                       className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
                       placeholder="BRL"
@@ -451,7 +458,7 @@ export default function ApplicationDetails() {
                   </View>
 
                   <View className="flex-1 gap-2">
-                    <Text className="text-zinc-400 text-xs">Mínimo</Text>
+                    <Text className="text-zinc-400 text-xs">Min</Text>
                     <TextInput
                       className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
                       placeholder="5000"
@@ -463,7 +470,7 @@ export default function ApplicationDetails() {
                   </View>
 
                   <View className="flex-1 gap-2">
-                    <Text className="text-zinc-400 text-xs">Máximo</Text>
+                    <Text className="text-zinc-400 text-xs">Max</Text>
                     <TextInput
                       className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
                       placeholder="8000"
@@ -481,11 +488,12 @@ export default function ApplicationDetails() {
           </View>
 
           {/* Status buttons */}
-          <Text className="text-zinc-200 font-semibold mt-2">Alterar status</Text>
+          <Text className="text-zinc-200 font-semibold mt-2">Change status</Text>
 
           <View className="gap-2">
             {STATUSES.map((s) => {
               const selected = s === app.currentStatus;
+              const allowedNext = ALLOWED_TRANSITIONS[app.currentStatus] ?? [];
 
               return (
                 <Pressable
@@ -499,6 +507,22 @@ export default function ApplicationDetails() {
                       Alert.alert(
                         "Finalize a edição",
                         "Salve ou cancele a edição antes de trocar o status."
+                      );
+                      return;
+                    }
+
+                    if (app.currentStatus === s) {
+                      Alert.alert("Same status", "This application is already in this status.");
+                      return;
+                    }
+
+                    if (!allowedNext.includes(s)) {
+                      const readable = allowedNext.length
+                        ? allowedNext.map(statusLabel).join(", ")
+                        : "no transitions allowed";
+                      Alert.alert(
+                        "Invalid transition",
+                        `From ${statusLabel(app.currentStatus)} you can go to: ${readable}.`
                       );
                       return;
                     }

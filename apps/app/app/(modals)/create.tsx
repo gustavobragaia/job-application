@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View, Alert, ActivityIndicator } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, TextInput, View, Alert, ActivityIndicator, Platform } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { ApplicationStatus, useApplications } from "../../src/context/applications";
 
@@ -11,7 +12,7 @@ const STATUSES: ApplicationStatus[] = ["APPLIED"];
 function statusLabel(s: ApplicationStatus) {
   switch (s) {
     case "APPLIED":
-      return "Aplicado";
+      return "Applied";
   }
 }
 
@@ -33,25 +34,9 @@ function isProbablyUrl(v: string) {
   return /^https?:\/\/.+/i.test(t);
 }
 
-// Aceita "YYYY-MM-DD" ou ISO. Converte para ISO.
-// Se inválido, retorna null.
-function parseNullableDateToISO(v: string) {
-  const t = v.trim();
-  if (!t) return null;
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
-    const d = new Date(t + "T00:00:00.000Z");
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toISOString();
-  }
-
-  const d = new Date(t);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
-}
-
 export default function Create() {
   const { createApplication } = useApplications();
+  const now = useMemo(() => new Date(), []);
 
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
@@ -61,11 +46,24 @@ export default function Create() {
   const [notes, setNotes] = useState("");
 
   const [currentStatus, setCurrentStatus] = useState<ApplicationStatus>("APPLIED");
-  const [appliedAt, setAppliedAt] = useState("");
+  const [includeDate, setIncludeDate] = useState(true);
+  const [appliedDate, setAppliedDate] = useState<Date>(now);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [currency, setCurrency] = useState("");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const currencyOptions = [
+    { code: "BRL", label: "R$ Real", symbol: "R$" },
+    { code: "USD", label: "$ Dollar", symbol: "$" },
+    { code: "EUR", label: "€ Euro", symbol: "€" },
+    { code: "GBP", label: "£ Pound", symbol: "£" },
+    { code: "ARS", label: "$ Peso", symbol: "$" },
+  ];
+  const getCurrencySymbol = (code?: string) =>
+    currencyOptions.find((c) => c.code === code)?.symbol ?? "";
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -82,11 +80,9 @@ export default function Create() {
       return;
     }
 
-    const appliedAtISO = parseNullableDateToISO(appliedAt);
-    if (appliedAt.trim() && !appliedAtISO) {
-      Alert.alert("Data inválida", 'Use "YYYY-MM-DD" (ex: 2025-12-21) ou uma data ISO válida.');
-      return;
-    }
+    const appliedAtISO = includeDate
+      ? new Date(Date.UTC(appliedDate.getFullYear(), appliedDate.getMonth(), appliedDate.getDate())).toISOString()
+      : null;
 
     const min = parseNullableInt(salaryMin);
     const max = parseNullableInt(salaryMax);
@@ -119,12 +115,17 @@ export default function Create() {
         salaryMax: max,
       });
 
-      router.back(); // ✅ melhor pra modal
+      setBanner({ type: "success", message: "Application created." });
+      setTimeout(() => {
+        router.back(); // ✅ melhor pra modal
+      }, 500);
     } catch (e: any) {
-      Alert.alert(
-        "Erro ao salvar",
-        e?.message ? String(e.message) : "Não foi possível criar a aplicação. Tente novamente."
-      );
+      setBanner({
+        type: "error",
+        message: e?.message
+          ? String(e.message)
+          : "Could not create the application. Try again.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -154,18 +155,38 @@ export default function Create() {
 
           <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
             <View className="px-5 pt-2 gap-4">
-              <Text className="text-white text-3xl font-bold">Nova aplicação</Text>
+              <Text className="text-white text-3xl font-bold">New application</Text>
               <Text className="text-zinc-400">
-                Preencha o que tiver — só Empresa e Cargo são obrigatórios.
+                Fill what you have — only Company and Role are required.
               </Text>
+
+              {banner ? (
+                <View
+                  className={[
+                    "px-4 py-3 rounded-2xl border",
+                    banner.type === "success"
+                      ? "bg-emerald-500/15 border-emerald-500/40"
+                      : "bg-red-500/15 border-red-500/40",
+                  ].join(" ")}
+                >
+                  <Text
+                    className={[
+                      "font-semibold",
+                      banner.type === "success" ? "text-emerald-200" : "text-red-200",
+                    ].join(" ")}
+                  >
+                    {banner.message}
+                  </Text>
+                </View>
+              ) : null}
 
               <View className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 gap-4">
                 {/* Company */}
                 <View className="gap-2">
-                  <Text className="text-zinc-200 font-semibold">Empresa *</Text>
+                  <Text className="text-zinc-200 font-semibold">Company *</Text>
                   <TextInput
                     className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                    placeholder="Ex: Nubank"
+                    placeholder="e.g. Nubank"
                     placeholderTextColor="#71717a"
                     value={company}
                     onChangeText={setCompany}
@@ -175,10 +196,10 @@ export default function Create() {
 
                 {/* Role */}
                 <View className="gap-2">
-                  <Text className="text-zinc-200 font-semibold">Cargo *</Text>
+                  <Text className="text-zinc-200 font-semibold">Role *</Text>
                   <TextInput
                     className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                    placeholder="Ex: Frontend Dev"
+                    placeholder="e.g. Frontend Dev"
                     placeholderTextColor="#71717a"
                     value={role}
                     onChangeText={setRole}
@@ -220,15 +241,53 @@ export default function Create() {
 
                 {/* AppliedAt */}
                 <View className="gap-2">
-                  <Text className="text-zinc-200 font-semibold">Data da aplicação</Text>
-                  <TextInput
-                    className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#71717a"
-                    value={appliedAt}
-                    onChangeText={setAppliedAt}
-                    editable={!isSaving}
-                  />
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-zinc-200 font-semibold">Applied at</Text>
+                    <Pressable
+                      onPress={() => setIncludeDate((v) => !v)}
+                      disabled={isSaving}
+                      className={[
+                        "px-3 py-1.5 rounded-full border",
+                        includeDate ? "bg-emerald-500 border-emerald-400" : "bg-zinc-900 border-zinc-800",
+                      ].join(" ")}
+                    >
+                      <Text className={includeDate ? "text-zinc-950 font-bold" : "text-white font-bold"}>
+                        {includeDate ? "Include" : "Skip"}
+                      </Text>
+                    </Pressable>
+                  </View>
+
+                  {includeDate ? (
+                    <View className="gap-3">
+                      <Text className="text-zinc-400">
+                        {appliedDate.toISOString().slice(0, 10)}
+                      </Text>
+
+                      <Pressable
+                        className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 items-center"
+                        onPress={() => setShowDatePicker(true)}
+                        disabled={isSaving}
+                      >
+                        <Text className="text-white font-semibold">Select date</Text>
+                      </Pressable>
+
+                      {showDatePicker ? (
+                        <DateTimePicker
+                          value={appliedDate}
+                          mode="date"
+                          display={Platform.OS === "ios" ? "spinner" : "calendar"}
+                          onChange={(event, selectedDate) => {
+                            if (Platform.OS === "android") {
+                              setShowDatePicker(false);
+                            }
+                            if (selectedDate) setAppliedDate(selectedDate);
+                          }}
+                          maximumDate={new Date(2100, 11, 31)}
+                          minimumDate={new Date(2000, 0, 1)}
+                        />
+                      ) : null}
+                    </View>
+                  ) : null}
                 </View>
 
                 {/* Job URL */}
@@ -247,10 +306,10 @@ export default function Create() {
 
                 {/* Location */}
                 <View className="gap-2">
-                  <Text className="text-zinc-200 font-semibold">Localização</Text>
+                  <Text className="text-zinc-200 font-semibold">Location</Text>
                   <TextInput
                     className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                    placeholder="Remoto / São Paulo"
+                    placeholder="Remote / São Paulo"
                     placeholderTextColor="#71717a"
                     value={location}
                     onChangeText={setLocation}
@@ -260,13 +319,13 @@ export default function Create() {
 
                 {/* Notes */}
                 <View className="gap-2">
-                  <Text className="text-zinc-200 font-semibold">Notas</Text>
+                  <Text className="text-zinc-200 font-semibold">Notes</Text>
                   <TextInput
                     className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
                     multiline
                     textAlignVertical="top"
                     style={{ minHeight: 110 }}
-                    placeholder="O que você quer lembrar dessa vaga?"
+                    placeholder="What do you want to remember about this job?"
                     placeholderTextColor="#71717a"
                     value={notes}
                     onChangeText={setNotes}
@@ -276,16 +335,55 @@ export default function Create() {
 
                 {/* Salary */}
                 <View className="gap-2">
-                  <Text className="text-zinc-200 font-semibold">Salário</Text>
+                  <Text className="text-zinc-200 font-semibold">Salary</Text>
                   <View className="flex-row gap-3">
-                    <TextInput
-                      className="flex-1 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
-                      placeholder="Moeda"
-                      placeholderTextColor="#71717a"
-                      value={currency}
-                      onChangeText={setCurrency}
-                      editable={!isSaving}
-                    />
+                    <View style={{ flex: 1, position: "relative" }}>
+                      <Pressable
+                        className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4"
+                        onPress={() => setShowCurrencyPicker((v) => !v)}
+                        disabled={isSaving}
+                      >
+                        <Text className="text-white font-semibold text-center">
+                          {getCurrencySymbol(currency) || "¤"}
+                        </Text>
+                      </Pressable>
+                      {showCurrencyPicker ? (
+                        <View
+                          style={{
+                            position: "absolute",
+                            top: "100%",
+                            left: 0,
+                            right: 0,
+                            zIndex: 10,
+                          }}
+                          className="mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-lg"
+                        >
+                          {currencyOptions.map((opt, idx) => {
+                            const last = idx === currencyOptions.length - 1;
+                            const selected = opt.code === currency;
+                            return (
+                              <Pressable
+                                key={opt.code}
+                                className={[
+                                  "px-4 py-3",
+                                  !last ? "border-b border-zinc-800" : "",
+                                  selected ? "bg-emerald-500/20" : "",
+                                ].join(" ")}
+                                onPress={() => {
+                                  setCurrency(opt.code);
+                                  setShowCurrencyPicker(false);
+                                }}
+                                disabled={isSaving}
+                              >
+                                <Text className={selected ? "text-emerald-400 font-bold" : "text-white"}>
+                                  {opt.symbol} ({opt.code})
+                                </Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      ) : null}
+                    </View>
                     <TextInput
                       className="flex-1 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-4 text-white"
                       placeholder="Mín"
@@ -324,7 +422,7 @@ export default function Create() {
                         canSave ? "text-zinc-950" : "text-zinc-400",
                       ].join(" ")}
                     >
-                      {isSaving ? "Salvando..." : "Salvar"}
+                      {isSaving ? "Saving..." : "Save"}
                     </Text>
                   </View>
                 </Pressable>
@@ -336,7 +434,7 @@ export default function Create() {
                   }}
                   disabled={isSaving}
                 >
-                  <Text className="text-white font-bold text-lg">Cancelar</Text>
+                  <Text className="text-white font-bold text-lg">Cancel</Text>
                 </Pressable>
               </View>
             </View>

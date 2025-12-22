@@ -11,11 +11,11 @@ export type ApplicationStatus =
 
 //show with right label on home
 export const STATUS_LABEL: Record<ApplicationStatus, string> = {
-  APPLIED: "Aplicado",
+  APPLIED: "Applied",
   OA: "Online Assessment",
-  INTERVIEW: "Entrevista",
-  OFFER: "Oferta",
-  REJECTED: "Rejeitado",
+  INTERVIEW: "Interview",
+  OFFER: "Offer",
+  REJECTED: "Rejected",
 };
 
 export type JobApplicationObject = {

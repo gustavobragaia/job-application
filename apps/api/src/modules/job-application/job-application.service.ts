@@ -260,7 +260,7 @@ const ALLOWED_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = {
   APPLIED: ["OA", "INTERVIEW", "REJECTED"],
   OA: ["INTERVIEW", "REJECTED"],
   INTERVIEW: ["OFFER", "REJECTED"],
-  OFFER: [],      // dont back
+  OFFER: ["INTERVIEW"],      // dont back
   REJECTED: [],   // dont back
 }
 function assertValidTransition(from: ApplicationStatus, to: ApplicationStatus) {
