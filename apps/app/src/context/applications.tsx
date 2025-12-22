@@ -1,4 +1,5 @@
 import { createContext, PropsWithChildren, useContext, useMemo, useState } from "react";
+import { apiRequest } from "../lib/api";
 
 //took from prisma
 export type ApplicationStatus =
@@ -18,32 +19,29 @@ export const STATUS_LABEL: Record<ApplicationStatus, string> = {
 };
 
 export type JobApplicationObject = {
-    id: string;
+  id: string;
+  userId?: string;
 
-    // no mobile (fase 3), você pode não ter auth ainda
-    userId?: string;
+  company: string;
+  role: string;
+  jobUrl?: string | null;
+  location?: string | null;
+  notes?: string | null;
 
-    company: string;
-    role: string;
-    jobUrl?: string | null;
-    location?: string | null;
-    notes?: string | null;
+  currentStatus: ApplicationStatus;
+  appliedAt?: string | null;
 
-    currentStatus: ApplicationStatus;
-    appliedAt?: string | null; // DateTime -> string ISO
+  currency?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
 
-    currency?: string | null;
-    salaryMin?: number | null;
-    salaryMax?: number | null;
-
-    createdAt: string; // ISO
-    updatedAt: string; // ISO
-}
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+};
 
 type CreateJobApplicationInput = {
     company: string;
     role: string;
-    currentStatus: ApplicationStatus;
     jobUrl?: string | null;
     location?: string | null;
     notes?: string | null;
@@ -54,67 +52,77 @@ type CreateJobApplicationInput = {
 }
 
 type UpdateJobApplicationInput = Partial<
-  Omit<JobApplicationObject, "id" | "createdAt" | "updatedAt">
+  Omit<JobApplicationObject, "id" | "userId" | "createdAt" | "updatedAt">
 >;
 
 //create context contract per screen
 type ApplicationsContextValue = {
     applications: JobApplicationObject[];
+    isLoading: boolean;
 
-    createApplication: (data: CreateJobApplicationInput) => string;
-    updateApplication: (id: string, patch: UpdateJobApplicationInput) => void;
-    changeStatus: (id: string, toStatus: ApplicationStatus, reason?: string) => void;
-    deleteApplication: (id: string) => void;
+    fetchApplications: () => Promise<void>;
+    createApplication: (data: CreateJobApplicationInput) => Promise<JobApplicationObject>;
+    updateApplication: (id: string, patch: UpdateJobApplicationInput) => Promise<void>;
+    changeStatus: (id: string, toStatus: ApplicationStatus, reason?: string) => Promise<void>;
+    deleteApplication: (id: string) => Promise<void>;
     getApplicationById: (id: string) => JobApplicationObject | undefined;
 }
 
 //create the context
 const ApplicationsContext = createContext<ApplicationsContextValue | null>(null)
 
-function newId(){
-    return Math.random().toString(16).slice(2) + Date.now().toString(16);
-}
-
 export function ApplicationsProvider({children}: PropsWithChildren){
     //provider with objects
     const [applications, setApplications] = useState<JobApplicationObject[]>([])
+    const [isLoading, setIsLoading] = useState(false)
 
-    function createApplication(data: CreateJobApplicationInput){
-        const id = newId()
-        const now = new Date().toISOString()
-
-        const app: JobApplicationObject = {
-            id,
-            company: data.company.trim(),
-            role: data.role.trim(),
-            jobUrl: data.jobUrl ?? null,
-            location: data.location ?? null,
-            notes: data.notes ?? null,
-            currentStatus: "APPLIED",
-            appliedAt: data.appliedAt ?? null,
-            currency: data.currency ?? null,
-            salaryMin: data.salaryMin ?? null,
-            salaryMax: data.salaryMax ?? null,
-            createdAt: now,
-            updatedAt: now,
+    //fill the array with applications
+    async function fetchApplications(){
+        try{
+            setIsLoading(true)
+            const data = await apiRequest<{items: JobApplicationObject[]}>("/applications", {
+                method: "GET",
+            })
+            setApplications(data.items)
         }
-
-        setApplications((prev) => [app, ...prev])
-
-        return id
+        finally{
+            setIsLoading(false)          
+        }
     }
-    function updateApplication(id: string, patch: UpdateJobApplicationInput){
-        const now = new Date().toISOString();
+
+    async function createApplication(data: CreateJobApplicationInput){
+        const res = await apiRequest<{application: JobApplicationObject}>("/applications", {
+            method: "POST",
+            body: data,
+        })
+        setApplications((prev) => [res.application, ...prev])
+        return res.application
+    }
+
+    async function updateApplication(id: string, patch: UpdateJobApplicationInput){
+        const res = await apiRequest<{application: JobApplicationObject}>(`/applications/${id}`, {
+            method: "PUT",
+            body: patch
+        })
         setApplications((prev) =>
-            prev.map((a) => (a.id === id ? { ...a, ...patch, updatedAt: now } : a))
+            prev.map((a) => (a.id === id ? { ...a, ...res.application } : a))
         );
     }
-    function changeStatus(id: string, toStatus: ApplicationStatus, reason?: string) {
-        // Fase 3: só atualiza o status.
-        // (na fase 4/5 você usa `reason` pra gerar history ou mandar pro backend)
-        updateApplication(id, { currentStatus: toStatus });
+
+    async function changeStatus(id: string, toStatus: ApplicationStatus, reason?: string) {
+        const res = await apiRequest<{application: JobApplicationObject}>(`/applications/${id}/status`, {
+            method: "PUT",
+            body: {toStatus, reason}
+        })
+        setApplications((prev) =>
+            prev.map((a) => (a.id === id ? { ...a, ...res.application } : a))
+        );
     }
-    function deleteApplication(id: string) {
+
+    async function deleteApplication(id: string) {
+        const data = await apiRequest(`/applications/${id}`, {
+            method: "DELETE",
+        })
         setApplications((prev) => prev.filter((a) => a.id !== id));
     }
 
@@ -126,13 +134,15 @@ export function ApplicationsProvider({children}: PropsWithChildren){
     const value = useMemo(
         ()=> ({
             applications,
+            isLoading,
             createApplication,
             updateApplication,
             changeStatus,
             deleteApplication,
             getApplicationById,
+            fetchApplications,
         }),
-        [applications]
+        [applications, isLoading]
     )
 
     return(

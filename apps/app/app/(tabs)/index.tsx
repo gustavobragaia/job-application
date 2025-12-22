@@ -1,8 +1,8 @@
-import { FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, Text, TextInput, View, RefreshControl, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { cssInterop } from "nativewind";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 
 import { ApplicationStatus, useApplications } from "../../src/context/applications";
 import { loginUser, registerUser } from "../../src/services/auth";
@@ -53,8 +53,17 @@ function normalize(s: string) {
 }
 
 export default function Home() {
-  const { applications } = useApplications();
+  const { applications, fetchApplications, isLoading } = useApplications();
   const { signOut } = useUser();
+
+  // ✅ carregar ao entrar
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    fetchApplications();
+  }, [fetchApplications]);
 
   // === filtros da rota ===
   const [q, setQ] = useState(""); // q
@@ -331,8 +340,13 @@ export default function Home() {
           Mostrando {paged.length} de {total}
         </Text>
 
-        {/* List */}
-        {total === 0 ? (
+        {/* ✅ Loading inicial (sem mexer em estilo) */}
+        {isLoading && applications.length === 0 ? (
+          <View className="flex-1 items-center justify-center gap-3">
+            <ActivityIndicator />
+            <Text className="text-zinc-400 text-lg font-semibold">Carregando...</Text>
+          </View>
+        ) : total === 0 ? (
           <View className="flex-1 items-center justify-center gap-2">
             <Text className="text-zinc-400 text-lg font-semibold">Nada encontrado</Text>
             <Text className="text-zinc-500 text-sm text-center">
@@ -345,6 +359,9 @@ export default function Home() {
               data={paged}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ paddingBottom: 12 }}
+              refreshControl={
+                <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
+              }
               renderItem={({ item }) => (
                 <Pressable
                   className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 mb-3 active:opacity-90"
@@ -378,33 +395,6 @@ export default function Home() {
             ) : null}
           </>
         )}
-             <Pressable
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
-                onPress={async () => {
-                  const user = await loginUser({ email: "teste@teste.com", password: "123456" })
-                  console.log(user)
-                }}
-              >
-                <Text className="text-white font-bold">Login</Text>
-              </Pressable>
-                <Pressable
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
-                onPress={async () => {
-                  const user = await registerUser({ email: "teste123@teste.com", password: "1234567", name: "Gustavo"})
-                  console.log(user)
-                }}
-              >
-                <Text className="text-white font-bold">Register</Text>
-              </Pressable>
-           <Pressable
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl py-4 items-center active:opacity-90"
-                onPress={async () => {
-                  const data = await signOut()
-                  console.log()
-                }}
-              >
-                <Text className="text-white font-bold">Logout</Text>
-              </Pressable>
       </View>
     </SafeAreaView>
   );
