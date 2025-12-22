@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, TextInput, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, TextInput, ActivityIndicator, Image } from "react-native";
 import { router, Link } from "expo-router";
 import { useUser } from "../../src/context/user";
 import { registerUser } from "../../src/services/auth";
@@ -32,7 +32,13 @@ export default function Register() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#09090b", padding: 20, justifyContent: "center", gap: 16 }}>
-      <Text style={{ color: "white", fontSize: 28, fontWeight: "800" }}>Create account</Text>
+      <View style={{ alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <Image
+          source={require("../../assets/joblylogo.png")}
+          style={{ width: 150, height: 60, resizeMode: "contain" }}
+        />
+        <Text style={{ color: "white", fontSize: 28, fontWeight: "800" }}>Create account</Text>
+      </View>
 
       <View style={{ gap: 10 }}>
         <TextInput

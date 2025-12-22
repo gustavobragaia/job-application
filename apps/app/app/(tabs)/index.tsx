@@ -167,7 +167,7 @@ export default function Home() {
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-zinc-950">
       <View className="flex-1 px-5 pt-8 gap-4">
-        <Text className="text-white text-3xl font-bold">Job Tracker</Text>
+        <Text className="text-white text-3xl font-bold">Jobly</Text>
 
         {/* Search (q) */}
         <TextInput
@@ -219,7 +219,7 @@ export default function Home() {
             className="flex-1 bg-emerald-500 rounded-2xl py-4 items-center active:opacity-90"
             onPress={() => router.push("/(modals)/create")}
           >
-            <Text className="text-zinc-950 font-bold text-lg">Criar aplicação</Text>
+            <Text className="text-zinc-950 font-bold text-lg">Create Job Application</Text>
           </Pressable>
 
           <Pressable
