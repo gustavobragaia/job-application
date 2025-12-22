@@ -4,7 +4,7 @@ const TOKEN_KEY = "jobtracker_token";
 
 // Reads base URL from env when available; falls back to LAN/local defaults.
 // Adjust `FALLBACK_BASE_URL` to your machine/IP as needed.
-const FALLBACK_BASE_URL = "http://192.168.0.92:3333";
+const FALLBACK_BASE_URL = "http://192.168.0.171:3333";
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "") ||
   FALLBACK_BASE_URL;

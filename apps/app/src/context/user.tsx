@@ -1,5 +1,5 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react"
-import { loginUser } from "../services/auth"
+import { loginUser, registerUser as registerUserService } from "../services/auth"
 import { apiRequest, getToken, setToken } from "../lib/api"
 
 export type User = {
@@ -17,12 +17,18 @@ type changePasswordInput ={
     currentPassword: string,
     newPassword: string
 }
+type registerUserInput = {
+    email: string,
+    name: string,
+    password: string,
+}
 
 type UserContextValue = {
     user: User | null;
     isLoading: boolean;
     signIn: (email: string, password: string) => Promise<void>;
     signOut: ()=> Promise<void>;
+    registerUser: (data: registerUserInput) => Promise<void>;
     updateProfile: (patch: updateProfileInput) => Promise<void>;
     changePassword: (data: changePasswordInput) => Promise<void>
 }
@@ -69,6 +75,10 @@ export function UserProvider({children}: PropsWithChildren){
         setUser(null)
     }
 
+    async function registerUser(data: registerUserInput){
+        const newUser = await registerUserService(data)
+        setUser(newUser)
+    }
 
     /* ---------- profile ---------- */
     async function updateProfile(patch: updateProfileInput) {
@@ -92,7 +102,8 @@ export function UserProvider({children}: PropsWithChildren){
         signIn,
         signOut,
         changePassword,
-        updateProfile
+        updateProfile,
+        registerUser
     }), [user, isLoading])
 
     return (
