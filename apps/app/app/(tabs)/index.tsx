@@ -5,7 +5,6 @@ import { cssInterop } from "nativewind";
 import { useEffect, useMemo, useCallback, useState } from "react";
 
 import { ApplicationStatus, useApplications } from "../../src/context/applications";
-import { loginUser, registerUser } from "../../src/services/auth";
 import { useUser } from "../../src/context/user";
 cssInterop(SafeAreaView, { className: "style" });
 

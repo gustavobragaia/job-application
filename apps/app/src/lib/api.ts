@@ -53,9 +53,13 @@ export async function apiRequest<T>(
   }: ApiRequestOptions = {}
 ): Promise<T> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...extraHeaders,
   };
+
+  const hasBody = body != null;
+  if (hasBody && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (auth) {
     const token = await getToken();
@@ -71,7 +75,7 @@ export async function apiRequest<T>(
     res = await fetch(url, {
       method,
       headers,
-      body: body != null ? JSON.stringify(body) : undefined,
+      body: hasBody ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
   } catch (err: any) {

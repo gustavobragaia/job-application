@@ -87,6 +87,7 @@ export default function ApplicationDetails() {
     useApplications();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // drafts (todos os campos editáveis)
   const [companyDraft, setCompanyDraft] = useState("");
@@ -174,9 +175,16 @@ export default function ApplicationDetails() {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          deleteApplication(app.id);
-          router.replace("/");
+        onPress: async () => {
+          try {
+            setIsDeleting(true);
+            await deleteApplication(app.id);
+            router.replace("/");
+          } catch (e: any) {
+            Alert.alert("Could not delete", e?.message ?? "Please try again.");
+          } finally {
+            setIsDeleting(false);
+          }
         },
       },
     ]);
@@ -307,11 +315,14 @@ export default function ApplicationDetails() {
                       </Pressable>
 
                   <Pressable
-                        className="bg-red-600 rounded-2xl px-4 py-2 active:opacity-90"
-                        onPress={handleDelete}
-                      >
-                        <Text className="text-white font-bold">Delete</Text>
-                      </Pressable>
+                    className="bg-red-600 rounded-2xl px-4 py-2 active:opacity-90"
+                    onPress={handleDelete}
+                    disabled={isDeleting}
+                  >
+                    <Text className="text-white font-bold">
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </Text>
+                  </Pressable>
                 </>
               )}
             </View>
