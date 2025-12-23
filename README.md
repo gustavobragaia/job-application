@@ -2,13 +2,22 @@
 
 ## Goal
 
-- Build a realistic mobile app with Expo Router and full navigation (tabs + modals + stacks)
-- Push domain modeling beyond CRUD and keep the shape ready for a real backend
-- Show architecture choices that scale and are easy to explain in interviews
-- Deliver a polished UX (dark mode, bottom sheet, central CTA) with clean, composable code
-- Leave the door open to plug in a Fastify + Prisma API without rewriting the app
-
-<img src="./docs/video-demo.gif" alt="Demo walkthrough" width="600">
+<table>
+  <tr>
+    <td style="vertical-align: top; padding-right: 16px;">
+      <ul>
+        <li>Build a realistic mobile app with Expo Router and full navigation (tabs + modals + stacks)</li>
+        <li>Push domain modeling beyond CRUD and keep the shape ready for a real backend</li>
+        <li>Show architecture choices that scale and are easy to explain in interviews</li>
+        <li>Deliver a polished UX (dark mode, bottom sheet, central CTA) with clean, composable code</li>
+        <li>Leave the door open to plug in a Fastify + Prisma API without rewriting the app</li>
+      </ul>
+    </td>
+    <td style="vertical-align: top;">
+      <img src="./docs/video-demo.gif" alt="Demo walkthrough" width="320">
+    </td>
+  </tr>
+</table>
 
 ---
 
