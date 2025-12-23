@@ -8,6 +8,8 @@
 - Deliver a polished UX (dark mode, bottom sheet, central CTA) with clean, composable code
 - Leave the door open to plug in a Fastify + Prisma API without rewriting the app
 
+<img src="./docs/video-demo.gif" alt="Demo walkthrough" width="600">
+
 ---
 
 ## Stack
@@ -49,7 +51,6 @@ This structure was chosen to keep the app easy to use and easy to extend.
 
 <img src="./docs/architecture.png" alt="Architecture Diagram" width="640">
 
-- Camadas claras: UI (RN + Expo Router) → Context/Services → (futuro) API client → Backend
 - Clear layers: UI (RN + Expo Router) → Context/Services → (future) API client → Backend
 - Local-first: the app runs fully offline with Context; plug in a fetcher to sync
 - Deliberate navigation: tabs for daily flow, modals for create/edit, push for details
@@ -83,3 +84,45 @@ src/
     ├─ applications.tsx
     └─ user.tsx
 ```
+
+---
+
+## How to Run (Mobile)
+
+```bash
+cd apps/app
+npm install
+# set EXPO_PUBLIC_API_URL for your environment:
+# - iOS simulator: http://localhost:3333
+# - Android emulator: http://10.0.2.2:3333
+# - Physical device: http://<your-lan-ip>:3333
+npx expo start
+```
+
+## How to Run (Backend)
+
+```bash
+cd apps/api
+npm install
+# set envs: DATABASE_URL, JWT_SECRET, etc.
+npm run dev
+```
+
+## Build / Release (EAS)
+
+```bash
+cd apps/app
+# ensure EXPO_PUBLIC_API_URL is set in EAS Secrets for production
+eas build -p android --profile production
+```
+
+## Assets
+
+- Icons/splash: `apps/app/assets/` (icon.png, adaptive-icon.png, splash-icon.png, favicon.png)
+- Logo: `apps/app/assets/joblylogo.png`
+- Diagrams/screens: `docs/architecture.png`, `docs/navigation-flow.png`, `docs/domain-model.png`
+- Demo: `docs/video-demo.gif`
+
+## Known Notes
+
+- Dependency warnings: match Expo SDK suggestions with `npx expo install --check` if needed.\*\*\*
